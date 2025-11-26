@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { FolderOpen, FileText, Image, File, ExternalLink, Search, Save } from 'lucide-react';
+import { FolderOpen, FileText, Image, File, ExternalLink, Search, Save, Upload, Plus, ChevronRight, Music, FileIcon } from 'lucide-react';
 import { db } from '../lib/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useGlitch } from '../hooks/useGlitch';
 
 export default function DriveView() {
     const { currentUser } = useAuth();
@@ -12,6 +13,18 @@ export default function DriveView() {
     const [error, setError] = useState('');
     const [isEditingId, setIsEditingId] = useState(false);
     const [accessToken, setAccessToken] = useState(null);
+    const [breadcrumb, setBreadcrumb] = useState(['Root']);
+    const { triggerGlitch, glitchClass } = useGlitch();
+
+    // File type icon helper
+    const getFileIcon = (mimeType) => {
+        if (mimeType?.includes('folder')) return { icon: FolderOpen, color: 'text-accent-amber' };
+        if (mimeType?.includes('image')) return { icon: Image, color: 'text-accent-green' };
+        if (mimeType?.includes('pdf')) return { icon: FileText, color: 'text-accent-green' };
+        if (mimeType?.includes('audio')) return { icon: Music, color: 'text-accent-green' };
+        if (mimeType?.includes('document') || mimeType?.includes('text')) return { icon: FileText, color: 'text-accent-green' };
+        return { icon: File, color: 'text-accent-green' };
+    };
 
     // Load saved folder ID
     useEffect(() => {
@@ -96,100 +109,127 @@ export default function DriveView() {
     };
 
     return (
-        <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
-            <div className="cyber-border bg-cyber-gray/50 backdrop-blur-md p-8 mb-8">
-                <div className="flex justify-between items-center mb-6">
-                    <h1 className="text-3xl font-orbitron text-white text-glow flex items-center gap-3">
-                        <FolderOpen className="w-8 h-8 text-cyber-cyan" />
-                        ARCHIVES
+        <div className="mx-auto max-w-7xl animate-in fade-in duration-500">
+            {/* Header */}
+            <div className="mb-6 flex flex-wrap items-center justify-between gap-4">
+                <div className="flex flex-col">
+                    <h1 className="font-heading text-4xl font-bold uppercase tracking-wider text-primary-text">
+                        Drive
                     </h1>
-
-                    <div className="flex items-center gap-2">
-                        {isEditingId ? (
-                            <div className="flex gap-2">
-                                <input
-                                    type="text"
-                                    value={folderId}
-                                    onChange={(e) => setFolderId(e.target.value)}
-                                    placeholder="Enter Drive Folder ID"
-                                    className="bg-cyber-dark border border-cyber-cyan/30 p-2 text-white text-sm w-64 outline-none focus:border-cyber-cyan"
-                                />
-                                <button onClick={saveFolderId} className="p-2 bg-cyber-cyan text-cyber-dark hover:bg-cyber-cyan/80">
-                                    <Save className="w-4 h-4" />
-                                </button>
-                            </div>
-                        ) : (
+                    <p className="font-body text-base text-secondary-text">File and asset management</p>
+                </div>
+                <div className="flex gap-4">
+                    {isEditingId ? (
+                        <div className="flex gap-2">
+                            <input
+                                type="text"
+                                value={folderId}
+                                onChange={(e) => setFolderId(e.target.value)}
+                                placeholder="Enter Drive Folder ID"
+                                className="bg-panel-background border border-border p-2 text-primary-text text-sm w-64 outline-none focus:border-accent-green rounded-sm"
+                            />
+                            <button
+                                onClick={saveFolderId}
+                                className="flex items-center justify-center gap-2 h-11 px-4 rounded-sm font-heading font-semibold bg-accent-green text-background hover:opacity-90 transition-opacity"
+                            >
+                                <Save className="w-4 h-4" />
+                            </button>
+                        </div>
+                    ) : (
+                        <>
                             <button
                                 onClick={() => setIsEditingId(true)}
-                                className="text-sm text-cyber-cyan/70 hover:text-cyber-cyan font-mono"
+                                onMouseEnter={triggerGlitch}
+                                className={`flex items-center justify-center gap-2 h-11 px-6 rounded-sm font-heading font-semibold bg-panel-background text-accent-green border border-border hover:border-accent-green hover:shadow-[0_0_8px_var(--color-glow-green)] transition-all ${glitchClass}`}
                             >
-                                ID: {folderId || 'NOT_SET'}
+                                <Plus className="w-5 h-5" />
+                                Configure Folder
                             </button>
-                        )}
-                    </div>
+                            <button
+                                onClick={handleAuthorize}
+                                onMouseEnter={triggerGlitch}
+                                className={`flex items-center justify-center gap-2 h-11 px-6 rounded-sm font-heading font-semibold bg-accent-green text-background hover:opacity-90 transition-opacity ${glitchClass}`}
+                            >
+                                <Upload className="w-5 h-5" />
+                                {accessToken ? 'Refresh' : 'Connect'}
+                            </button>
+                        </>
+                    )}
                 </div>
+            </div>
 
-                {!accessToken && (
-                    <div className="p-4 border border-cyber-yellow/30 bg-cyber-yellow/5 text-cyber-yellow mb-6 flex justify-between items-center">
-                        <span>ENCRYPTED CONNECTION REQUIRED</span>
-                        <button
-                            onClick={handleAuthorize}
-                            className="px-4 py-2 bg-cyber-yellow/10 hover:bg-cyber-yellow/20 border border-cyber-yellow text-sm font-orbitron"
-                        >
-                            ESTABLISH LINK
-                        </button>
-                    </div>
-                )}
+            {/* Breadcrumb */}
+            <div className="mb-6 flex items-center gap-2 font-heading text-sm text-secondary-text">
+                {breadcrumb.map((item, i) => (
+                    <React.Fragment key={i}>
+                        {i > 0 && <ChevronRight className="w-4 h-4" />}
+                        <span className={i === breadcrumb.length - 1 ? 'text-primary-text' : 'hover:text-primary-text cursor-pointer'}>
+                            {item}
+                        </span>
+                    </React.Fragment>
+                ))}
+            </div>
 
-                {error && (
-                    <div className="p-4 border border-cyber-magenta/30 bg-cyber-magenta/5 text-cyber-magenta mb-6">
-                        ERROR: {error}
-                    </div>
-                )}
+            {/* Authorization Warning */}
+            {!accessToken && (
+                <div className="p-4 border border-accent-amber/30 bg-accent-amber/5 text-accent-amber mb-6 flex justify-between items-center rounded-sm">
+                    <span className="font-heading">ENCRYPTED CONNECTION REQUIRED</span>
+                    <button
+                        onClick={handleAuthorize}
+                        className="px-4 py-2 bg-accent-amber/10 hover:bg-accent-amber/20 border border-accent-amber text-sm font-heading rounded-sm transition-colors"
+                    >
+                        ESTABLISH LINK
+                    </button>
+                </div>
+            )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {files.map(file => (
+            {/* Error Message */}
+            {error && (
+                <div className="p-4 border border-accent-red/30 bg-accent-red/5 text-accent-red mb-6 rounded-sm">
+                    ERROR: {error}
+                </div>
+            )}
+
+            {/* Files Grid */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+                {files.map(file => {
+                    const { icon: FileTypeIcon, color } = getFileIcon(file.mimeType);
+                    const isFolder = file.mimeType?.includes('folder');
+
+                    return (
                         <a
                             key={file.id}
                             href={file.webViewLink}
                             target="_blank"
                             rel="noreferrer"
-                            className="group block"
+                            onMouseEnter={triggerGlitch}
+                            className={`flex flex-col items-center justify-center p-4 rounded-sm bg-panel-background border border-border cursor-pointer aspect-square hover:border-accent-green/50 hover:shadow-[0_0_8px_var(--color-glow-green)] transition-all duration-300 ${glitchClass}`}
                         >
-                            <div className="cyber-border bg-cyber-dark/50 p-4 hover:bg-cyber-cyan/5 transition-all duration-300 group-hover:box-glow h-full flex flex-col justify-between">
-                                <div className="flex items-start justify-between mb-4">
-                                    <div className="p-3 bg-cyber-cyan/10 rounded-lg text-cyber-cyan group-hover:text-white transition-colors">
-                                        {file.mimeType.includes('image') ? <Image className="w-6 h-6" /> :
-                                            file.mimeType.includes('pdf') ? <FileText className="w-6 h-6" /> :
-                                                <File className="w-6 h-6" />}
-                                    </div>
-                                    <ExternalLink className="w-4 h-4 text-gray-500 group-hover:text-cyber-cyan" />
-                                </div>
-
-                                <div>
-                                    <h3 className="text-lg font-rajdhani font-bold text-gray-200 group-hover:text-cyber-cyan truncate" title={file.name}>
-                                        {file.name}
-                                    </h3>
-                                    <p className="text-xs text-gray-500 mt-1 font-mono">
-                                        {file.mimeType.split('.').pop().toUpperCase()}
-                                    </p>
-                                </div>
-                            </div>
+                            <FileTypeIcon className={`w-16 h-16 ${color}`} />
+                            <p className="mt-2 text-center text-primary-text font-body truncate w-full text-sm" title={file.name}>
+                                {file.name}
+                            </p>
                         </a>
-                    ))}
+                    );
+                })}
 
-                    {accessToken && files.length === 0 && !loading && (
-                        <div className="col-span-full text-center py-12 text-gray-500">
-                            NO ARTIFACTS FOUND IN SECTOR
-                        </div>
-                    )}
+                {/* Empty State */}
+                {accessToken && files.length === 0 && !loading && (
+                    <div className="col-span-full text-center py-12 text-secondary-text">
+                        <FolderOpen className="w-16 h-16 mx-auto mb-4 opacity-50" />
+                        <p className="font-heading">NO ARTIFACTS FOUND IN SECTOR</p>
+                    </div>
+                )}
 
-                    {loading && (
-                        <div className="col-span-full text-center py-12 text-cyber-cyan animate-pulse">
+                {/* Loading State */}
+                {loading && (
+                    <div className="col-span-full text-center py-12 text-accent-green animate-pulse">
+                        <div className="flex items-center justify-center gap-2">
+                            <Search className="w-5 h-5" />
                             SCANNING ARCHIVES...
                         </div>
-                    )}
-                </div>
+                    </div>
+                )}
             </div>
         </div>
     );

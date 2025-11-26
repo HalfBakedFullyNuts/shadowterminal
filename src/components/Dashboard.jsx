@@ -7,6 +7,7 @@ import SessionList from './SessionList';
 import { getRecentItems } from '../lib/recentItems';
 import RunnerStatus from './Dashboard/RunnerStatus';
 import ErrorBoundary from './ErrorBoundary';
+import CyberButton from './CyberButton';
 
 export default function Dashboard() {
     const [sessions, setSessions] = useState([]);
@@ -127,11 +128,10 @@ export default function Dashboard() {
                                 </div>
                             </div>
 
-                            <Link
-                                to={`/session/${nextMission.id}`}
-                                className="px-8 py-4 bg-accent-amber text-background font-bold font-heading hover:bg-primary-text transition-all flex items-center gap-2 hover:shadow-[0_0_20px_var(--color-glow-amber)] rounded-sm"
-                            >
-                                JACK IN
+                            <Link to={`/session/${nextMission.id}`}>
+                                <CyberButton tag="NET_LINK">
+                                    JACK IN
+                                </CyberButton>
                             </Link>
                         </div>
                     </div>

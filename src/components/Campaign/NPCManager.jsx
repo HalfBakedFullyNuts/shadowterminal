@@ -1,13 +1,17 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../../lib/firebase';
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, where } from 'firebase/firestore';
-import { Users, UserPlus, Edit, Trash2, Eye, EyeOff, MapPin, Link as LinkIcon, FileText } from 'lucide-react';
+import { Users, UserPlus, Edit, Trash2, Eye, EyeOff, MapPin, Link as LinkIcon, FileText, Search, Plus } from 'lucide-react';
 import { addRecentItem } from '../../lib/recentItems';
+import CyberButton from '../CyberButton';
+import { useGlitch } from '../../hooks/useGlitch';
 
 export default function NPCManager({ campaignId, isGM, players, sessions, clues }) {
     const [npcs, setNpcs] = useState([]);
     const [editingId, setEditingId] = useState(null);
     const [showForm, setShowForm] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
+    const { triggerGlitch, glitchClass } = useGlitch();
 
     // Form State
     const [formData, setFormData] = useState({
@@ -16,6 +20,7 @@ export default function NPCManager({ campaignId, isGM, players, sessions, clues 
         shortDescription: '',
         description: '',
         location: '',
+        faction: '',
         status: 'Active',
         isPublic: false,
         connections: [], // { pcId, connectionRating, loyaltyRating }
@@ -39,6 +44,7 @@ export default function NPCManager({ campaignId, isGM, players, sessions, clues 
             shortDescription: '',
             description: '',
             location: '',
+            faction: '',
             status: 'Active',
             isPublic: false,
             connections: [],
@@ -107,23 +113,71 @@ export default function NPCManager({ campaignId, isGM, players, sessions, clues 
         return formData.connections.find(c => c.pcId === pcId) || { connectionRating: 0, loyaltyRating: 0 };
     };
 
-    // Filter NPCs for players
-    const visibleNpcs = isGM ? npcs : npcs.filter(n => n.isPublic);
+    // Filter NPCs for players and search
+    const visibleNpcs = (isGM ? npcs : npcs.filter(n => n.isPublic)).filter(npc => {
+        if (!searchQuery) return true;
+        const q = searchQuery.toLowerCase();
+        return (
+            npc.name?.toLowerCase().includes(q) ||
+            npc.role?.toLowerCase().includes(q) ||
+            npc.faction?.toLowerCase().includes(q)
+        );
+    });
+
+    // Status color helper
+    const getStatusColor = (status) => {
+        switch (status) {
+            case 'Active': return 'text-accent-green';
+            case 'Inactive': return 'text-gray-400';
+            case 'Deceased': return 'text-accent-red';
+            default: return 'text-secondary-text';
+        }
+    };
+
+    const getStatusDot = (status) => {
+        switch (status) {
+            case 'Active': return 'bg-accent-green';
+            case 'Inactive': return 'bg-gray-400';
+            case 'Deceased': return 'bg-accent-red';
+            default: return 'bg-secondary-text';
+        }
+    };
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h3 className="text-xl font-heading text-accent-red flex items-center gap-2">
-                    <Users className="w-5 h-5" />
-                    PERSONNEL DATABASE
-                </h3>
+        <div className="flex flex-col gap-6">
+            {/* Header */}
+            <header>
+                <h2 className="font-heading text-primary-text text-3xl font-bold leading-tight tracking-wide uppercase">
+                    NPC Manager
+                </h2>
+                <p className="font-body text-secondary-text text-base">
+                    Personnel database for campaign contacts
+                </p>
+            </header>
+
+            {/* Search Bar & Actions */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+                <div className="flex-grow max-w-lg">
+                    <div className="flex w-full items-stretch rounded-sm h-12 border border-border bg-panel-background focus-within:border-accent-green focus-within:shadow-[0_0_8px_var(--color-glow-green)] transition-all duration-300">
+                        <div className="text-secondary-text flex items-center justify-center pl-4">
+                            <Search className="w-5 h-5" />
+                        </div>
+                        <input
+                            className="flex w-full min-w-0 flex-1 text-primary-text focus:outline-none border-none bg-transparent h-full placeholder:text-secondary-text px-4 text-base font-body"
+                            placeholder="Search by Name, Role, or Faction..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
                 {isGM && (
                     <button
-                        onClick={() => { resetForm(); setShowForm(!showForm); }}
-                        className="flex items-center gap-2 px-3 py-1 bg-accent-red/20 border border-accent-red text-accent-red hover:bg-accent-red hover:text-primary-text transition-all text-sm rounded-sm"
+                        onClick={() => { resetForm(); setShowForm(!showForm); triggerGlitch(); }}
+                        onMouseEnter={triggerGlitch}
+                        className={`flex items-center justify-center gap-2 h-12 px-6 rounded-sm font-heading font-semibold bg-accent-green text-background hover:opacity-90 transition-opacity ${glitchClass}`}
                     >
-                        <UserPlus className="w-4 h-4" />
-                        {showForm ? 'CANCEL' : 'ADD NPC'}
+                        <Plus className="w-5 h-5" />
+                        <span className="uppercase tracking-wider">{showForm ? 'Cancel' : 'Create NPC'}</span>
                     </button>
                 )}
             </div>
@@ -240,7 +294,7 @@ export default function NPCManager({ campaignId, isGM, players, sessions, clues 
                         <label htmlFor="isPublic" className="text-secondary-text text-sm">Visible to Players</label>
                     </div>
 
-                    <div className="flex justify-end gap-2">
+                    <div className="flex justify-end gap-2 pt-4">
                         <button
                             type="button"
                             onClick={resetForm}
@@ -248,75 +302,101 @@ export default function NPCManager({ campaignId, isGM, players, sessions, clues 
                         >
                             CANCEL
                         </button>
-                        <button
+                        <CyberButton
                             type="submit"
-                            className="px-6 py-2 bg-accent-red text-primary-text font-bold hover:bg-accent-red/80 rounded-sm"
+                            tag="SAVE_REC"
+                            className="w-64"
+                            style={{ '--primary-hue': 0, '--shadow-primary-hue': 180 }}
                         >
                             SAVE RECORD
-                        </button>
+                        </CyberButton>
                     </div>
                 </form>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* NPC Cards Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                 {visibleNpcs.map(npc => (
                     <div
                         key={npc.id}
                         onClick={() => addRecentItem({ ...npc, type: 'npc' })}
-                        className={`border border-border p-4 bg-panel-background/30 relative group cursor-pointer hover:bg-accent-red/5 transition-colors rounded-sm ${!npc.isPublic && isGM ? 'opacity-70 border-dashed' : ''}`}
+                        className={`flex flex-col justify-between rounded-sm bg-panel-background border border-border p-5 gap-4 cursor-pointer hover:border-accent-green/50 hover:shadow-[0_0_8px_var(--color-glow-green)] transition-all duration-300 ${!npc.isPublic && isGM ? 'opacity-70 border-dashed' : ''}`}
                     >
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <h4 className="text-lg font-bold text-primary-text flex items-center gap-2">
+                        <div className="flex flex-col gap-2">
+                            {/* Header with name and status */}
+                            <div className="flex justify-between items-start">
+                                <h3 className="font-heading text-xl font-bold text-primary-text">
                                     {npc.name}
-                                    {!npc.isPublic && isGM && <EyeOff className="w-4 h-4 text-secondary-text" />}
-                                </h4>
-                                <p className="text-accent-red text-sm font-mono uppercase">{npc.role}</p>
-                            </div>
-                            {isGM && (
-                                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => togglePublic(npc)} title="Toggle Visibility">
-                                        {npc.isPublic ? <Eye className="w-4 h-4 text-accent-green" /> : <EyeOff className="w-4 h-4 text-secondary-text" />}
-                                    </button>
-                                    <button onClick={() => handleEdit(npc)} title="Edit">
-                                        <Edit className="w-4 h-4 text-accent-amber" />
-                                    </button>
-                                    <button onClick={() => handleDelete(npc.id)} title="Delete">
-                                        <Trash2 className="w-4 h-4 text-accent-red" />
-                                    </button>
+                                    {!npc.isPublic && isGM && <EyeOff className="w-4 h-4 text-secondary-text inline ml-2" />}
+                                </h3>
+                                <div className={`flex items-center gap-2 text-xs font-medium ${getStatusColor(npc.status || 'Active')}`}>
+                                    <div className={`w-2 h-2 rounded-full ${getStatusDot(npc.status || 'Active')}`}></div>
+                                    <span>{npc.status || 'Active'}</span>
                                 </div>
+                            </div>
+
+                            {/* Role */}
+                            <p className="font-body text-secondary-text">
+                                Role: <span className="text-primary-text/80">{npc.role || 'Unknown'}</span>
+                            </p>
+
+                            {/* Faction */}
+                            <p className="font-body text-secondary-text">
+                                Faction: <span className="text-primary-text/80">{npc.faction || 'Independent'}</span>
+                            </p>
+
+                            {/* Short Description */}
+                            {npc.shortDescription && (
+                                <p className="text-secondary-text text-sm mt-1 italic line-clamp-2">{npc.shortDescription}</p>
                             )}
                         </div>
 
-                        <p className="text-secondary-text text-sm mt-2 italic">{npc.shortDescription}</p>
-
-                        {npc.location && (
-                            <div className="flex items-center gap-1 text-xs text-secondary-text/70 mt-2">
-                                <MapPin className="w-3 h-3" />
-                                {npc.location}
-                            </div>
-                        )}
-
-                        {/* GM Only Details */}
+                        {/* Action buttons - GM only */}
                         {isGM && (
-                            <div className="mt-3 pt-3 border-t border-border/50 text-xs text-secondary-text/70 space-y-1">
-                                <p className="line-clamp-2">{npc.description}</p>
-                                {npc.connections?.length > 0 && (
-                                    <div className="flex flex-wrap gap-2 mt-1">
-                                        {npc.connections.map((c, i) => (
-                                            <span key={i} className="bg-panel-background px-1 rounded-sm">
-                                                Ag.{c.pcId.slice(0, 4)}: C{c.connectionRating}/L{c.loyaltyRating}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
+                            <div className="flex items-center justify-end gap-2 pt-4 border-t border-border">
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); togglePublic(npc); }}
+                                    title="Toggle Visibility"
+                                    className="flex items-center justify-center p-2 rounded-sm hover:bg-accent-green/10 transition-colors"
+                                >
+                                    {npc.isPublic ? <Eye className="w-4 h-4 text-accent-green" /> : <EyeOff className="w-4 h-4 text-secondary-text" />}
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleEdit(npc); }}
+                                    title="Edit"
+                                    className="flex items-center justify-center p-2 rounded-sm text-accent-amber hover:bg-accent-amber/10 transition-colors"
+                                >
+                                    <Edit className="w-4 h-4" />
+                                </button>
+                                <button
+                                    onClick={(e) => { e.stopPropagation(); handleDelete(npc.id); }}
+                                    title="Delete"
+                                    className="flex items-center justify-center p-2 rounded-sm text-accent-red hover:bg-accent-red/10 transition-colors"
+                                >
+                                    <Trash2 className="w-4 h-4" />
+                                </button>
                             </div>
                         )}
                     </div>
                 ))}
+
+                {/* Empty State */}
                 {visibleNpcs.length === 0 && (
-                    <div className="col-span-full text-center py-8 text-secondary-text border border-dashed border-border rounded-sm">
-                        NO RECORDS FOUND.
+                    <div className="col-span-full flex flex-col items-center justify-center gap-4 p-10 rounded-sm border-2 border-dashed border-border text-center min-h-[200px]">
+                        <Users className="w-12 h-12 text-secondary-text" />
+                        <h3 className="font-heading text-2xl text-primary-text">No NPCs Found</h3>
+                        <p className="text-secondary-text max-w-sm">
+                            {searchQuery ? 'No matches for your search. Try different keywords.' : 'Your campaign is looking empty. Time to populate the shadows.'}
+                        </p>
+                        {isGM && !searchQuery && (
+                            <button
+                                onClick={() => { resetForm(); setShowForm(true); }}
+                                className="mt-2 flex items-center justify-center gap-2 h-12 px-6 rounded-sm font-heading font-semibold bg-accent-green text-background hover:opacity-90 transition-opacity"
+                            >
+                                <Plus className="w-5 h-5" />
+                                <span className="uppercase tracking-wider">Create Your First NPC</span>
+                            </button>
+                        )}
                     </div>
                 )}
             </div>
