@@ -5,6 +5,7 @@ import { collection, addDoc, serverTimestamp, query, where, getDocs } from 'fire
 import { useAuth } from '../contexts/AuthContext';
 import { Calendar, MapPin, Globe, Users, RefreshCw, Plus, X, Shield } from 'lucide-react';
 import { generateRecurringDates, formatDate, getISOWeek } from '../lib/dateUtils';
+import CyberButton from './CyberButton';
 
 export default function CreateSession() {
     const { currentUser } = useAuth();
@@ -296,13 +297,13 @@ export default function CreateSession() {
                 </div>
 
                 <div className="flex justify-end pt-6 border-t border-cyber-cyan/20">
-                    <button
+                    <CyberButton
                         type="submit"
                         disabled={loading || selectedDates.size === 0}
-                        className="px-8 py-3 bg-cyber-cyan hover:bg-cyber-cyan/80 text-cyber-dark font-bold font-orbitron tracking-wider clip-path-slant disabled:opacity-50 disabled:cursor-not-allowed transition-all hover:box-glow"
+                        tag="EXECUTE"
                     >
                         {loading ? 'TRANSMITTING...' : 'INITIATE SESSION'}
-                    </button>
+                    </CyberButton>
                 </div>
             </form >
         </div >

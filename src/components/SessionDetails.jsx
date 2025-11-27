@@ -6,6 +6,7 @@ import { useSessionData } from './SessionDetails/useSessionData';
 import { Calendar, MapPin, Users, Globe, Check, X, Star, Trash2 } from 'lucide-react';
 import { deleteDoc, doc } from 'firebase/firestore';
 import { db } from '../lib/firebase';
+import CyberButton from './CyberButton';
 
 export default function SessionDetails() {
     const { sessionId } = useParams();
@@ -24,10 +25,6 @@ export default function SessionDetails() {
     }, [session, loading, navigate]);
 
     const myAvailability = availabilities.find(a => a.userId === currentUser.uid) || { availableDates: [] };
-
-    // toggleDate is now from hook
-    // finalizeSession is now from hook
-
 
     const [accessToken, setAccessToken] = useState(null);
     const [syncing, setSyncing] = useState(false);
@@ -232,12 +229,14 @@ END:VCALENDAR`;
                             </button>
 
                             {!accessToken ? (
-                                <button
+                                <CyberButton
                                     onClick={handleAuthorize}
-                                    className="flex-1 py-3 bg-cyber-cyan/10 border border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan/20 transition-all font-orbitron flex items-center justify-center gap-2"
+                                    tag="G_LINK"
+                                    className="flex-1 w-full"
+                                    style={{ '--primary-hue': 190, '--shadow-primary-hue': 320 }}
                                 >
-                                    <Globe className="w-5 h-5" /> CONNECT GOOGLE CALENDAR
-                                </button>
+                                    CONNECT GOOGLE CALENDAR
+                                </CyberButton>
                             ) : (
                                 <div className="flex-1 flex flex-col gap-2">
                                     <div className="flex items-center gap-2 p-2 bg-cyber-dark border border-gray-700">
@@ -252,16 +251,18 @@ END:VCALENDAR`;
                                             Make Permanently Recurring (Weekly)
                                         </label>
                                     </div>
-                                    <button
+                                    <CyberButton
                                         onClick={handleSync}
                                         disabled={syncing || syncSuccess}
-                                        className={`w-full py-3 border transition-all font-orbitron flex items-center justify-center gap-2 ${syncSuccess
-                                            ? 'bg-green-500/20 border-green-500 text-green-400'
-                                            : 'bg-cyber-cyan/20 border-cyber-cyan text-cyber-cyan hover:bg-cyber-cyan hover:text-black'
-                                            }`}
+                                        tag="SYNC_OP"
+                                        className="w-full"
+                                        style={{
+                                            '--primary-hue': syncSuccess ? 120 : 190,
+                                            '--shadow-primary-hue': syncSuccess ? 60 : 320
+                                        }}
                                     >
-                                        {syncing ? 'SYNCING...' : syncSuccess ? 'SYNC COMPLETE' : 'SYNC TO CALENDAR (W/ EMAIL REMINDER)'}
-                                    </button>
+                                        {syncing ? 'SYNCING...' : syncSuccess ? 'SYNC COMPLETE' : 'SYNC TO CALENDAR'}
+                                    </CyberButton>
                                 </div>
                             )}
                         </div>
@@ -381,6 +382,6 @@ END:VCALENDAR`;
                     </div>
                 </div>
             </div>
-        </div >
+        </div>
     );
 }
