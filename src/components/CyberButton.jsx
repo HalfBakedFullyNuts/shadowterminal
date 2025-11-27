@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import './CyberButton.css';
 
-const CyberButton = ({ children, tag = 'R25', className = '', ...props }) => {
+const CyberButton = ({ children, tag = 'R25', className = '', size = 'default', ...props }) => {
+    const sizeClass = size === 'small' ? 'cybr-btn--small' : '';
     const [glitchStyle, setGlitchStyle] = useState({});
 
     const handleMouseEnter = (e) => {
@@ -43,7 +44,7 @@ const CyberButton = ({ children, tag = 'R25', className = '', ...props }) => {
 
     return (
         <button
-            className={`cybr-btn ${className}`}
+            className={`cybr-btn ${sizeClass} ${className}`}
             {...props}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}

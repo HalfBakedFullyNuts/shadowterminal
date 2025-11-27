@@ -48,6 +48,16 @@
     transition: background 0.2s;
 }
 
+/* Small variant - 33% smaller */
+.cybr-btn--small {
+    --font-size: 17px;
+    --border: 3px;
+    --label-size: 6px;
+    min-width: 200px;
+    height: 50px;
+    line-height: 50px;
+}
+
 /* Hover and Active States for background color change */
 .cybr-btn:hover {
     --primary-lightness: 45;

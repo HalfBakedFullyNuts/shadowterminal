@@ -7,6 +7,7 @@ import { Shield, Users, Calendar, HardDrive, ExternalLink, Plus, FolderOpen, Dat
 import NPCManager from './Campaign/NPCManager';
 import ClueManager from './Campaign/ClueManager';
 import DriveBrowser from './Drive/DriveBrowser';
+import CyberButton from './CyberButton';
 
 export default function CampaignDetails() {
     const { campaignId } = useParams();
@@ -145,12 +146,10 @@ export default function CampaignDetails() {
                                 MISSION LOGS
                             </h2>
                             {isGM && (
-                                <Link
-                                    to={`/create-session?campaignId=${campaignId}`}
-                                    className="flex items-center gap-2 px-4 py-2 bg-accent-green text-background font-bold hover:bg-primary-text transition-all rounded-sm"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    NEW SESSION
+                                <Link to={`/create-session?campaignId=${campaignId}`}>
+                                    <CyberButton tag="OP_NEW" size="small">
+                                        NEW SESSION
+                                    </CyberButton>
                                 </Link>
                             )}
                         </div>

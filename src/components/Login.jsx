@@ -4,14 +4,14 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, Terminal } from 'lucide-react';
 import CyberButton from './CyberButton';
 
-// Node definitions for the signal path - positioned around where Google popup appears (center)
+// Node definitions for the signal path
 const NODES = [
     { id: 'init', x: 10, y: 85, label: 'INIT SEQUENCE' },
     { id: 'encrypt', x: 10, y: 50, label: 'ENCRYPTING CHANNEL' },
     { id: 'route', x: 10, y: 15, label: 'ROUTING SIGNAL' },
     { id: 'proxy', x: 50, y: 8, label: 'PROXY BYPASS' },
     { id: 'spoof', x: 90, y: 15, label: 'SPOOFING LOGIN ID' },
-    { id: 'auth', x: 90, y: 50, label: 'AWAITING AUTH...' },
+    { id: 'auth', x: 90, y: 50, label: 'VERIFYING CREDENTIALS' },
     { id: 'confirm', x: 90, y: 85, label: 'SPOOF SUCCESSFUL' },
 ];
 
@@ -26,18 +26,18 @@ function SignalNode({ node, isActive, isComplete, isPulsing }) {
         >
             {/* Node circle */}
             <div
-                className={`w-3 h-3 rounded-full border-2 transition-all duration-300 ${
+                className={`w-5 h-5 rounded-full border-2 transition-all duration-300 ${
                     isComplete
-                        ? 'bg-accent-green border-accent-green shadow-[0_0_10px_var(--color-accent-green)]'
+                        ? 'bg-accent-green border-accent-green shadow-[0_0_15px_var(--color-accent-green)]'
                         : isActive
-                        ? 'bg-accent-amber border-accent-amber shadow-[0_0_15px_var(--color-accent-amber)] animate-pulse'
+                        ? 'bg-accent-amber border-accent-amber shadow-[0_0_20px_var(--color-accent-amber)] animate-pulse'
                         : 'bg-transparent border-border'
                 }`}
             />
             {/* Node label */}
             <div
-                className={`absolute whitespace-nowrap text-xs font-mono transition-all duration-300 ${
-                    node.x < 50 ? 'left-5' : 'right-5'
+                className={`absolute whitespace-nowrap text-sm font-mono transition-all duration-300 ${
+                    node.x < 50 ? 'left-7' : 'right-7'
                 } top-1/2 -translate-y-1/2 ${
                     isComplete
                         ? 'text-accent-green'
@@ -48,8 +48,7 @@ function SignalNode({ node, isActive, isComplete, isPulsing }) {
             >
                 {isComplete && node.id === 'confirm' ? 'SPOOF SUCCESSFUL' :
                  isComplete && node.id === 'spoof' ? 'ID SPOOFED' :
-                 isActive && node.id === 'auth' ? 'AWAITING AUTH...' :
-                 isComplete && node.id === 'auth' ? 'AUTH CONFIRMED' :
+                 isComplete && node.id === 'auth' ? 'CREDENTIALS VERIFIED' :
                  node.label}
             </div>
         </div>
@@ -79,68 +78,71 @@ function SignalLine({ from, to, isActive, progress }) {
     );
 }
 
-function SignalAnimation({ isActive, authConfirmed, onComplete }) {
+// Generate randomized delays for each node that sum to a fixed total
+function generateRandomDelays(nodeCount, totalTime) {
+    // Generate random weights for each node
+    const weights = Array.from({ length: nodeCount }, () => Math.random() + 0.3); // 0.3-1.3 range
+    const totalWeight = weights.reduce((sum, w) => sum + w, 0);
+
+    // Convert weights to delays that sum to totalTime
+    return weights.map(w => Math.round((w / totalWeight) * totalTime));
+}
+
+function SignalAnimation({ isActive, onComplete }) {
     const [currentNodeIndex, setCurrentNodeIndex] = useState(-1);
     const [completedNodes, setCompletedNodes] = useState(new Set());
-    const [waitingForAuth, setWaitingForAuth] = useState(false);
+    const [nodeDelays, setNodeDelays] = useState([]);
 
     useEffect(() => {
         if (!isActive) {
             setCurrentNodeIndex(-1);
             setCompletedNodes(new Set());
-            setWaitingForAuth(false);
+            setNodeDelays([]);
             return;
         }
 
+        // Generate randomized delays for this animation run
+        // Total time ~2000ms spread across 7 nodes
+        const delays = generateRandomDelays(SIGNAL_PATH.length, 2000);
+        setNodeDelays(delays);
+
         // Start the signal path
         let nodeIndex = 0;
+        let timeoutId;
+
         const advanceNode = () => {
             if (nodeIndex < SIGNAL_PATH.length) {
-                const currentNode = NODES[SIGNAL_PATH[nodeIndex]];
                 setCurrentNodeIndex(nodeIndex);
-
-                // Check if we're at the auth node (index 5)
-                if (nodeIndex === 5) {
-                    setWaitingForAuth(true);
-                    // Don't advance automatically - wait for authConfirmed
-                    return;
-                }
 
                 // Mark previous node as complete
                 if (nodeIndex > 0) {
                     setCompletedNodes(prev => new Set([...prev, SIGNAL_PATH[nodeIndex - 1]]));
                 }
 
+                const currentDelay = delays[nodeIndex];
                 nodeIndex++;
 
-                // Time between nodes (faster at start, slower in middle)
-                const delay = nodeIndex <= 2 ? 250 : nodeIndex <= 4 ? 350 : 300;
-                setTimeout(advanceNode, delay);
+                if (nodeIndex < SIGNAL_PATH.length) {
+                    timeoutId = setTimeout(advanceNode, currentDelay);
+                } else {
+                    // Final node - mark complete after delay and trigger onComplete
+                    timeoutId = setTimeout(() => {
+                        setCompletedNodes(prev => new Set([...prev, SIGNAL_PATH[SIGNAL_PATH.length - 1]]));
+                        setTimeout(() => {
+                            if (onComplete) onComplete();
+                        }, 500);
+                    }, currentDelay);
+                }
             }
         };
 
         // Small initial delay before starting
-        setTimeout(advanceNode, 200);
-    }, [isActive]);
+        timeoutId = setTimeout(advanceNode, 200);
 
-    // Handle auth confirmation
-    useEffect(() => {
-        if (waitingForAuth && authConfirmed) {
-            setWaitingForAuth(false);
-            // Mark auth node as complete
-            setCompletedNodes(prev => new Set([...prev, SIGNAL_PATH[5]]));
-            setCurrentNodeIndex(6);
-
-            // Complete final node after brief delay
-            setTimeout(() => {
-                setCompletedNodes(prev => new Set([...prev, SIGNAL_PATH[6]]));
-                // Signal animation complete
-                setTimeout(() => {
-                    if (onComplete) onComplete();
-                }, 500);
-            }, 400);
-        }
-    }, [waitingForAuth, authConfirmed, onComplete]);
+        return () => {
+            if (timeoutId) clearTimeout(timeoutId);
+        };
+    }, [isActive, onComplete]);
 
     if (!isActive) return null;
 
@@ -169,14 +171,14 @@ function SignalAnimation({ isActive, authConfirmed, onComplete }) {
                     node={node}
                     isActive={SIGNAL_PATH[currentNodeIndex] === idx}
                     isComplete={completedNodes.has(idx)}
-                    isPulsing={waitingForAuth && node.id === 'auth'}
+                    isPulsing={false}
                 />
             ))}
 
             {/* Traveling signal dot */}
             {currentNodeIndex >= 0 && currentNodeIndex < SIGNAL_PATH.length && (
                 <div
-                    className="absolute w-2 h-2 bg-accent-green rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-[0_0_10px_var(--color-accent-green),0_0_20px_var(--color-accent-green)]"
+                    className="absolute w-4 h-4 bg-accent-green rounded-full transform -translate-x-1/2 -translate-y-1/2 shadow-[0_0_15px_var(--color-accent-green),0_0_30px_var(--color-accent-green)]"
                     style={{
                         left: `${NODES[SIGNAL_PATH[currentNodeIndex]].x}%`,
                         top: `${NODES[SIGNAL_PATH[currentNodeIndex]].y}%`,
@@ -194,25 +196,21 @@ export default function Login() {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const [signalActive, setSignalActive] = useState(false);
-    const [authConfirmed, setAuthConfirmed] = useState(false);
 
     async function handleLogin() {
         try {
             setError('');
             setLoading(true);
-            setSignalActive(true);
-            setAuthConfirmed(false);
 
-            // Start the login process
+            // Wait for login to complete
             await login();
 
-            // Auth successful - signal to animation
-            setAuthConfirmed(true);
+            // Auth successful - now start the animation
+            setSignalActive(true);
 
         } catch (err) {
             setError('Failed to log in: ' + err.message);
             setSignalActive(false);
-            setAuthConfirmed(false);
             setLoading(false);
         }
     }
@@ -227,14 +225,18 @@ export default function Login() {
             {/* Background Ambience */}
             <div className="absolute inset-0 bg-gradient-to-t from-cyber-dark via-transparent to-cyber-cyan/5 pointer-events-none" />
 
-            <div className="max-w-lg w-full p-8 relative z-10">
-                <div className="cyber-border bg-cyber-gray/90 backdrop-blur-xl p-8 shadow-2xl shadow-cyber-cyan/20 relative min-h-[400px]">
-                    {/* Signal Animation Overlay */}
+            {/* Signal Animation - centered 66% of viewport */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-40">
+                <div className="w-[66vw] h-[66vh] relative">
                     <SignalAnimation
                         isActive={signalActive}
-                        authConfirmed={authConfirmed}
                         onComplete={handleAnimationComplete}
                     />
+                </div>
+            </div>
+
+            <div className="max-w-lg w-full p-8 relative z-10">
+                <div className="cyber-border bg-cyber-gray/90 backdrop-blur-xl p-8 shadow-2xl shadow-cyber-cyan/20 relative min-h-[400px]">
 
                     <div className={`transition-opacity duration-300 ${signalActive ? 'opacity-30' : 'opacity-100'}`}>
                         <div className="flex justify-center mb-6">
