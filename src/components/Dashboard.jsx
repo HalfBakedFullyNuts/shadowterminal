@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { db } from '../lib/firebase';
 import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
 import { Link } from 'react-router-dom';
-import { Plus, Calendar, MapPin, Clock, Vote, Users, ChevronRight, AlertCircle, FileText, User } from 'lucide-react';
+import { Plus, Calendar, MapPin, Clock, Vote, Users, ChevronRight, AlertCircle, FileText, User, FolderOpen } from 'lucide-react';
 import SessionList from './SessionList';
 import { getRecentItems } from '../lib/recentItems';
 import RunnerStatus from './Dashboard/RunnerStatus';
@@ -202,8 +202,8 @@ export default function Dashboard() {
                                 <span className="text-sm font-bold">NEW SESSION</span>
                             </Link>
                             <Link to="/drive" className="p-3 bg-background/40 border border-border hover:border-accent-green hover:text-accent-green transition-all text-center flex flex-col items-center gap-2 group rounded-sm">
-                                <Vote className="w-6 h-6 group-hover:scale-110 transition-transform" />
-                                <span className="text-sm font-bold">VOTES</span>
+                                <FolderOpen className="w-6 h-6 group-hover:scale-110 transition-transform" />
+                                <span className="text-sm font-bold">ARCHIVES</span>
                             </Link>
                             <div className="p-3 bg-background/40 border border-border hover:border-accent-red hover:text-accent-red transition-all text-center flex flex-col items-center gap-2 group cursor-not-allowed opacity-50 rounded-sm">
                                 <AlertCircle className="w-6 h-6" />
