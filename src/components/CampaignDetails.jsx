@@ -251,7 +251,7 @@ export default function CampaignDetails() {
                                         OPEN <ExternalLink className="w-3 h-3" />
                                     </a>
                                 </div>
-                                <DriveBrowser campaignId={campaignId} driveFolderId={campaign.driveFolderId} />
+                                <DriveBrowser campaignId={campaignId} folderId={campaign.driveFolderId} />
                             </div>
                         ) : (
                             <div className="text-center py-6 border border-dashed border-border text-secondary-text">

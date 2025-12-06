@@ -1,3 +1,225 @@
+# Shadowterminal Feature Tickets
+
+## Ticket Statuses
+- `[OPEN]` - Not started
+- `[IN PROGRESS]` - Currently being worked on
+- `[DONE]` - Completed
+- `[BLOCKED]` - Waiting on external dependency
+
+---
+
+## ST-001: Implement System Settings Page
+**Status:** `[OPEN]`
+**Priority:** Medium
+**Component:** Settings
+
+### Description
+The Settings page currently shows "SYSTEM SETTINGS LOCKED" placeholder text. Implement a functional settings page.
+
+### Acceptance Criteria
+- [ ] User preferences section (theme toggle if applicable)
+- [ ] Notification preferences
+- [ ] Google Drive connection status and disconnect option
+- [ ] Account info display (email, login method)
+- [ ] Danger zone (delete account option with confirmation)
+
+### Technical Notes
+- Location: `src/App.jsx:55` (currently placeholder div)
+- Create new component: `src/components/Settings.jsx`
+
+---
+
+## ST-002: Implement PANIC Button Functionality
+**Status:** `[OPEN]`
+**Priority:** Low
+**Component:** Dashboard
+
+### Description
+The PANIC button on the Dashboard is disabled (`cursor-not-allowed`, `opacity-50`). Implement thematic emergency functionality.
+
+### Acceptance Criteria
+- [ ] Button becomes clickable
+- [ ] On click, shows modal with "emergency" options:
+  - Quick session cancel notification
+  - "I'm running late" broadcast to session participants
+  - Emergency contact display
+- [ ] Visual feedback (red glow, animation)
+
+### Technical Notes
+- Location: `src/components/Dashboard.jsx:208-211`
+- Consider: What makes sense thematically for a Shadowrun app?
+
+---
+
+## ST-003: Implement Matrix Tab in Character Sheet
+**Status:** `[OPEN]`
+**Priority:** Medium
+**Component:** CharacterSheet
+
+### Description
+The Matrix tab shows "MODULE UNDER CONSTRUCTION". Implement matrix/hacking equipment management.
+
+### Acceptance Criteria
+- [ ] Display cyberdeck information
+- [ ] List programs (attack, sleaze, firewall, data processing)
+- [ ] Matrix attributes (Attack, Sleaze, Data Processing, Firewall)
+- [ ] Add/edit/remove programs
+- [ ] Matrix condition monitor
+
+### Technical Notes
+- Location: `src/components/CharacterSheet/CharacterSheet.jsx:112-155`
+- Follow existing pattern from GearTab/MagicTab
+- Firestore path: `characters/{id}/matrix`
+
+---
+
+## ST-004: Implement Social Tab in Character Sheet
+**Status:** `[OPEN]`
+**Priority:** Low
+**Component:** CharacterSheet
+
+### Description
+The Social tab shows "MODULE UNDER CONSTRUCTION". Implement contacts and social network management.
+
+### Acceptance Criteria
+- [ ] Contacts list with loyalty/connection ratings
+- [ ] Add/edit/remove contacts
+- [ ] Contact notes and specializations
+- [ ] Lifestyle tracking
+- [ ] SIN (System Identification Number) management
+
+### Technical Notes
+- Location: `src/components/CharacterSheet/CharacterSheet.jsx:112-155`
+- Firestore path: `characters/{id}/contacts`
+
+---
+
+## ST-005: Implement Invite Agent Functionality
+**Status:** `[OPEN]`
+**Priority:** High
+**Component:** Campaign
+
+### Description
+The "+ INVITE AGENT" button in CampaignDetails has no onClick handler. Implement player invitation system.
+
+### Acceptance Criteria
+- [ ] Click opens invite modal
+- [ ] Generate shareable invite link/code
+- [ ] Email invite option (optional)
+- [ ] Show pending invites
+- [ ] Accept/decline invite flow for recipients
+- [ ] GM can revoke pending invites
+
+### Technical Notes
+- Location: `src/components/CampaignDetails.jsx:278-280`
+- Requires new Firestore collection: `campaigns/{id}/invites`
+- Consider: invite codes vs direct user lookup
+
+---
+
+## ST-006: Wire Up Search in IntelView
+**Status:** `[OPEN]`
+**Priority:** Medium
+**Component:** Campaigns
+
+### Description
+The search input in IntelView exists but is not connected to filtering logic.
+
+### Acceptance Criteria
+- [ ] Search filters clues by name and description
+- [ ] Real-time filtering as user types
+- [ ] Clear search button
+- [ ] "No results" state
+
+### Technical Notes
+- Location: `src/components/Campaigns/IntelView.jsx:13-17`
+- Add useState for search term, filter clues array
+
+---
+
+## ST-007: Wire Up Search in DriveView
+**Status:** `[OPEN]`
+**Priority:** Medium
+**Component:** Drive
+
+### Description
+The search input in DriveView/DriveBrowser exists but is not connected to Google Drive search API.
+
+### Acceptance Criteria
+- [ ] Search queries Google Drive API
+- [ ] Debounce search input (300ms)
+- [ ] Show loading state during search
+- [ ] Clear search returns to folder view
+
+### Technical Notes
+- Location: `src/components/Drive/DriveBrowser.jsx`
+- Use Google Drive API `files.list` with `q` parameter
+
+---
+
+## ST-008: Add Missing Routes for NPC/Clue Creation
+**Status:** `[OPEN]`
+**Priority:** High
+**Component:** Routing
+
+### Description
+Links to `/campaigns/{id}/npcs/new` and `/campaigns/{id}/clues/new` exist but routes are not defined in App.jsx.
+
+### Acceptance Criteria
+- [ ] Add routes for NPC creation page
+- [ ] Add routes for Clue creation page
+- [ ] Routes should embed NPCManager/ClueManager with create mode
+
+### Technical Notes
+- Location: `src/App.jsx` routes section
+- Links at: `src/components/CampaignDetails.jsx:197-203, 217-223`
+
+---
+
+## ST-009: Enable Firestore Index for Character Sorting
+**Status:** `[OPEN]`
+**Priority:** Low
+**Component:** Dashboard
+
+### Description
+The `orderBy('updatedAt', 'desc')` is commented out in RunnerStatus because Firestore index doesn't exist.
+
+### Acceptance Criteria
+- [ ] Create composite index in Firestore
+- [ ] Uncomment orderBy in code
+- [ ] Characters sorted by most recently updated
+
+### Technical Notes
+- Location: `src/components/Dashboard/RunnerStatus.jsx:22`
+- Requires Firebase Console: Firestore > Indexes
+
+---
+
+## ST-010: Implement Character Delete Functionality
+**Status:** `[OPEN]`
+**Priority:** Medium
+**Component:** CharacterSheet
+
+### Description
+No UI exists to delete a character. Users cannot remove unwanted characters.
+
+### Acceptance Criteria
+- [ ] Delete button in character sheet (danger zone)
+- [ ] Confirmation modal with character name verification
+- [ ] Soft delete option (archive) vs hard delete
+- [ ] Cannot delete if character is in active campaign
+
+### Technical Notes
+- Add to CharacterSheet header or settings area
+- Consider: cascade delete subcollections (skills, gear, etc.)
+
+---
+
+## Completed Tickets
+
+### ST-000: Implement Cyberpunk 2077 Glitch Button Effect
+**Status:** `[DONE]`
+
 Feature Request: Implement Cyberpunk 2077 Glitch Button Effect
 
 Goal

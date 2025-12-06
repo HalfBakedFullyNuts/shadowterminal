@@ -60,6 +60,259 @@
   }
 }
 
+/* Matrix Topology Background - Retrofuturistic Terminal Style */
+.matrix-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+/* Perspective grid floor */
+.matrix-bg::before {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: -50%;
+  right: -50%;
+  height: 60%;
+  background:
+    /* Horizontal lines with perspective fade */
+    repeating-linear-gradient(
+      to bottom,
+      transparent 0px,
+      transparent 39px,
+      rgba(0, 255, 127, 0.08) 40px,
+      transparent 41px
+    ),
+    /* Vertical lines converging */
+    linear-gradient(
+      to bottom,
+      transparent 0%,
+      rgba(0, 255, 127, 0.04) 100%
+    );
+  transform: perspective(500px) rotateX(60deg);
+  transform-origin: center bottom;
+  mask-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+  -webkit-mask-image: linear-gradient(to top, rgba(0,0,0,0.8) 0%, transparent 100%);
+}
+
+/* Subtle vertical scan lines */
+.matrix-bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    to right,
+    transparent 0px,
+    transparent 2px,
+    rgba(0, 255, 127, 0.02) 3px,
+    transparent 4px
+  );
+  animation: scanline-drift 20s linear infinite;
+}
+
+/* Floating grid overlay */
+.matrix-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    /* Subtle hex/diamond pattern */
+    linear-gradient(30deg, transparent 49.5%, rgba(0, 255, 127, 0.04) 49.5%, rgba(0, 255, 127, 0.04) 50.5%, transparent 50.5%),
+    linear-gradient(-30deg, transparent 49.5%, rgba(0, 255, 127, 0.04) 49.5%, rgba(0, 255, 127, 0.04) 50.5%, transparent 50.5%);
+  background-size: 60px 35px;
+  opacity: 0.7;
+}
+
+/* Horizontal scan beam effect */
+.matrix-scanbeam {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: -1;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(0, 255, 127, 0.3) 20%,
+    rgba(0, 255, 127, 0.5) 50%,
+    rgba(0, 255, 127, 0.3) 80%,
+    transparent 100%
+  );
+  box-shadow: 0 0 30px rgba(0, 255, 127, 0.4), 0 0 60px rgba(0, 255, 127, 0.2);
+  animation: scan-beam 8s ease-in-out infinite;
+}
+
+/* Corner decorations - terminal frame style */
+.matrix-corner {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  pointer-events: none;
+}
+
+.matrix-corner::before,
+.matrix-corner::after {
+  content: '';
+  position: absolute;
+  background: rgba(0, 255, 127, 0.25);
+}
+
+.matrix-corner.top-left {
+  top: 20px;
+  left: 20px;
+}
+.matrix-corner.top-left::before {
+  top: 0;
+  left: 0;
+  width: 40px;
+  height: 1px;
+}
+.matrix-corner.top-left::after {
+  top: 0;
+  left: 0;
+  width: 1px;
+  height: 40px;
+}
+
+.matrix-corner.top-right {
+  top: 20px;
+  right: 20px;
+}
+.matrix-corner.top-right::before {
+  top: 0;
+  right: 0;
+  width: 40px;
+  height: 1px;
+}
+.matrix-corner.top-right::after {
+  top: 0;
+  right: 0;
+  width: 1px;
+  height: 40px;
+}
+
+.matrix-corner.bottom-left {
+  bottom: 20px;
+  left: 20px;
+}
+.matrix-corner.bottom-left::before {
+  bottom: 0;
+  left: 0;
+  width: 40px;
+  height: 1px;
+}
+.matrix-corner.bottom-left::after {
+  bottom: 0;
+  left: 0;
+  width: 1px;
+  height: 40px;
+}
+
+.matrix-corner.bottom-right {
+  bottom: 20px;
+  right: 20px;
+}
+.matrix-corner.bottom-right::before {
+  bottom: 0;
+  right: 0;
+  width: 40px;
+  height: 1px;
+}
+.matrix-corner.bottom-right::after {
+  bottom: 0;
+  right: 0;
+  width: 1px;
+  height: 40px;
+}
+
+/* Ambient glow spots */
+.matrix-glow {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.3;
+  animation: glow-pulse 10s ease-in-out infinite;
+}
+
+.matrix-glow.glow-1 {
+  top: 10%;
+  left: 20%;
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, rgba(0, 255, 127, 0.5) 0%, transparent 70%);
+  animation-delay: 0s;
+}
+
+.matrix-glow.glow-2 {
+  bottom: 20%;
+  right: 15%;
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, rgba(255, 191, 0, 0.4) 0%, transparent 70%);
+  animation-delay: 3s;
+}
+
+.matrix-glow.glow-3 {
+  top: 50%;
+  left: 60%;
+  width: 200px;
+  height: 200px;
+  background: radial-gradient(circle, rgba(0, 191, 255, 0.3) 0%, transparent 70%);
+  animation-delay: 6s;
+}
+
+/* CRT vignette effect */
+.matrix-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse at center,
+    transparent 0%,
+    transparent 60%,
+    rgba(21, 26, 29, 0.4) 100%
+  );
+}
+
+/* Animations */
+@keyframes scan-beam {
+  0%, 100% {
+    top: -2px;
+    opacity: 0;
+  }
+  5% {
+    opacity: 1;
+  }
+  95% {
+    opacity: 1;
+  }
+  100% {
+    top: 100%;
+    opacity: 0;
+  }
+}
+
+@keyframes scanline-drift {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(4px);
+  }
+}
+
+@keyframes glow-pulse {
+  0%, 100% {
+    opacity: 0.1;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.2;
+    transform: scale(1.1);
+  }
+}
+
 @layer utilities {
   .glow-amber-hover:hover {
     box-shadow: 0 0 10px var(--color-glow-amber);

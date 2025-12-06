@@ -17,6 +17,19 @@ export default function Layout() {
 
     return (
         <div className="min-h-screen bg-background text-primary-text font-body selection:bg-accent-green selection:text-background">
+            {/* Matrix Topology Background */}
+            <div className="matrix-bg">
+                <div className="matrix-grid" />
+                <div className="matrix-scanbeam" />
+                <div className="matrix-glow glow-1" />
+                <div className="matrix-glow glow-2" />
+                <div className="matrix-glow glow-3" />
+                <div className="matrix-corner top-left" />
+                <div className="matrix-corner top-right" />
+                <div className="matrix-corner bottom-left" />
+                <div className="matrix-corner bottom-right" />
+                <div className="matrix-vignette" />
+            </div>
             <div className="fixed inset-0 pointer-events-none bg-gradient-to-b from-transparent via-transparent to-background/80" />
 
             <header className="relative z-10 p-6 border-b border-border backdrop-blur-sm bg-panel-background/70">

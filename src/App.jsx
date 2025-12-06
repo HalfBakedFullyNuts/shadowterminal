@@ -15,6 +15,7 @@ import CharacterSheet from './components/CharacterSheet/CharacterSheet';
 import Dashboard from './components/Dashboard';
 import CampaignList from './components/CampaignList';
 import CampaignDetails from './components/CampaignDetails';
+import Settings from './components/Settings';
 
 // Dashboard component imported from ./components/Dashboard
 
@@ -49,10 +50,13 @@ function App() {
             <Route path="session/:sessionId" element={<SessionDetails />} /> {/* Legacy support or redirect */}
             <Route path="campaigns" element={<CampaignList />} />
             <Route path="campaigns/:campaignId" element={<CampaignDetails />} />
+            {/* NPC and Clue routes redirect to campaign with hash for scroll */}
+            <Route path="campaigns/:campaignId/npcs/new" element={<CampaignDetails autoOpenNpc />} />
+            <Route path="campaigns/:campaignId/clues/new" element={<CampaignDetails autoOpenClue />} />
             <Route path="drive" element={<DriveView />} />
             <Route path="characters" element={<CharacterList />} />
             <Route path="characters/:characterId" element={<CharacterSheet />} />
-            <Route path="settings" element={<div className="p-8 text-cyber-cyan">SYSTEM SETTINGS LOCKED</div>} />
+            <Route path="settings" element={<Settings />} />
           </Route>
         </Routes>
       </AuthProvider>

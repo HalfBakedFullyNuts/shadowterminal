@@ -1,7 +1,20 @@
-import React from 'react';
-import { Database, Search, Lock, Unlock } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Database, Search, Lock, Unlock, X } from 'lucide-react';
 
 export default function IntelView({ campaign }) {
+    const [searchTerm, setSearchTerm] = useState('');
+
+    const filteredClues = useMemo(() => {
+        if (!searchTerm.trim()) return campaign.clues;
+        const term = searchTerm.toLowerCase();
+        return campaign.clues.filter(clue =>
+            clue.item?.toLowerCase().includes(term) ||
+            clue.description?.toLowerCase().includes(term) ||
+            clue.details?.toLowerCase().includes(term) ||
+            clue.status?.toLowerCase().includes(term)
+        );
+    }, [campaign.clues, searchTerm]);
+
     return (
         <div className="space-y-6">
             <div className="flex justify-between items-center border-b border-gray-800 pb-2">
@@ -12,9 +25,19 @@ export default function IntelView({ campaign }) {
                     <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                     <input
                         type="text"
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
                         placeholder="SEARCH DATABASE..."
-                        className="bg-black/40 border border-gray-800 rounded pl-9 pr-4 py-1 text-sm text-white focus:border-cyber-cyan focus:outline-none font-rajdhani w-64"
+                        className="bg-black/40 border border-gray-800 rounded pl-9 pr-9 py-1 text-sm text-white focus:border-cyber-cyan focus:outline-none font-rajdhani w-64"
                     />
+                    {searchTerm && (
+                        <button
+                            onClick={() => setSearchTerm('')}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-cyber-cyan transition-colors"
+                        >
+                            <X className="w-4 h-4" />
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -29,8 +52,8 @@ export default function IntelView({ campaign }) {
                         </tr>
                     </thead>
                     <tbody className="font-rajdhani">
-                        {campaign.clues.length > 0 ? (
-                            campaign.clues.map(clue => (
+                        {filteredClues.length > 0 ? (
+                            filteredClues.map(clue => (
                                 <tr key={clue.id} className="border-b border-gray-800/50 hover:bg-cyber-cyan/5 transition-colors group">
                                     <td className="p-4">
                                         <span className={`flex items-center gap-2 text-xs font-bold px-2 py-1 rounded w-fit ${clue.status === 'Decrypted'
@@ -55,7 +78,7 @@ export default function IntelView({ campaign }) {
                         ) : (
                             <tr>
                                 <td colSpan="4" className="text-center py-12 text-gray-500 italic">
-                                    NO INTEL GATHERED
+                                    {searchTerm ? 'NO MATCHING INTEL FOUND' : 'NO INTEL GATHERED'}
                                 </td>
                             </tr>
                         )}

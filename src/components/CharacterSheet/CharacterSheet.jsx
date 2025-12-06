@@ -3,6 +3,8 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { Activity, Brain, Zap, Wifi, Database, Users, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCharacterData } from './useCharacterData';
+import { db } from '../../lib/firebase';
+import { doc, deleteDoc } from 'firebase/firestore';
 import CharacterSheetHeader from './parts/Header';
 import CoreTab from './tabs/CoreTab';
 import SkillsTab from './tabs/SkillsTab';
@@ -27,6 +29,16 @@ export default function CharacterSheet() {
         }
     };
 
+    const handleDelete = async () => {
+        if (characterId === 'new') return;
+        try {
+            await deleteDoc(doc(db, 'characters', characterId));
+            navigate('/characters');
+        } catch (error) {
+            console.error('Error deleting character:', error);
+        }
+    };
+
     if (loading) return <div className="p-8 text-cyber-cyan animate-pulse">INITIALIZING SIMULATION...</div>;
     if (!character) return <div className="p-8 text-red-500">ERROR: DATA CORRUPTED</div>;
 
@@ -38,8 +50,9 @@ export default function CharacterSheet() {
                     character={character}
                     setCharacter={setCharacter}
                     onSave={handleSave}
-                    saving={saving}
-                    onBack={() => navigate('/characters')}
+                    isSaving={saving}
+                    onDelete={handleDelete}
+                    isNew={characterId === 'new'}
                 />
 
                 <ModuleToggles character={character} setCharacter={setCharacter} />
@@ -149,6 +162,30 @@ function TabContent({ activeTab, character, setCharacter }) {
             ]}
             onItemAdd={item => setCharacter(p => ({ ...p, gear: [...(p.gear || []), item] }))}
             onItemRemove={id => setCharacter(p => ({ ...p, gear: p.gear.filter(i => i.id !== id) }))}
+        />;
+        case 'matrix': return <ModuleSection
+            title="MATRIX GEAR"
+            items={character.matrixGear || []}
+            fields={[
+                { key: 'name', label: 'Device/Program', placeholder: 'Cyberdeck Shiawase Cyber-5' },
+                { key: 'rating', label: 'Rating', placeholder: '5' },
+                { key: 'attribute', label: 'ASDF', placeholder: '7/6/5/4' },
+                { key: 'notes', label: 'Notes', placeholder: 'Attack/Sleaze/Data/Firewall' }
+            ]}
+            onItemAdd={item => setCharacter(p => ({ ...p, matrixGear: [...(p.matrixGear || []), item] }))}
+            onItemRemove={id => setCharacter(p => ({ ...p, matrixGear: p.matrixGear.filter(i => i.id !== id) }))}
+        />;
+        case 'social': return <ModuleSection
+            title="CONTACTS & LIFESTYLE"
+            items={character.contacts || []}
+            fields={[
+                { key: 'name', label: 'Contact Name', placeholder: 'Fixer Mike' },
+                { key: 'connection', label: 'Connection', placeholder: '4' },
+                { key: 'loyalty', label: 'Loyalty', placeholder: '3' },
+                { key: 'notes', label: 'Specialty/Notes', placeholder: 'Weapons dealer, Downtown' }
+            ]}
+            onItemAdd={item => setCharacter(p => ({ ...p, contacts: [...(p.contacts || []), item] }))}
+            onItemRemove={id => setCharacter(p => ({ ...p, contacts: p.contacts.filter(i => i.id !== id) }))}
         />;
         default: return <div className="text-center py-20 text-gray-500 font-orbitron">MODULE UNDER CONSTRUCTION</div>;
     }

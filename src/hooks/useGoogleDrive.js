@@ -10,36 +10,83 @@ export function useGoogleDrive() {
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        const initGapiClient = async () => {
+            try {
+                const apiKey = import.meta.env.VITE_GOOGLE_API_KEY || import.meta.env.VITE_FIREBASE_API_KEY;
+
+                if (!apiKey) {
+                    throw new Error('Missing API key. Set VITE_GOOGLE_API_KEY in .env');
+                }
+
+                // Initialize gapi client with just API key first
+                await window.gapi.client.init({
+                    apiKey: apiKey,
+                });
+
+                // Manual Discovery Loading Strategy
+                // We fetch the discovery doc manually because gapi.client.load() was failing with 502s
+                // when trying to fetch it internally via content.googleapis.com
+                try {
+                    console.log("Initializing: Fetching discovery doc manually...");
+                    const discoveryResponse = await fetch(DISCOVERY_DOCS[0]);
+
+                    if (!discoveryResponse.ok) {
+                        throw new Error(`Discovery fetch failed: ${discoveryResponse.status} ${discoveryResponse.statusText}`);
+                    }
+
+                    const discoveryJson = await discoveryResponse.json();
+                    console.log("Initializing: Loading discovery doc into GAPI...");
+
+                    // Pass the JSON object directly to load()
+                    // This bypasses the network request that was failing
+                    await window.gapi.client.load(discoveryJson);
+
+                } catch (loadErr) {
+                    console.error("Manual Load Error:", loadErr);
+                    throw new Error(`Failed to load Drive API: ${loadErr.message}`);
+                }
+
+                setIsInitialized(true);
+            } catch (err) {
+                console.error("GAPI Init Error", err);
+                const message = err?.result?.error?.message || err.message || "Unknown error";
+                setError(`Failed to initialize Google API: ${message}`);
+            }
+        };
+
         const loadGapi = () => {
+            // Check if script already exists
+            if (document.querySelector('script[src="https://apis.google.com/js/api.js"]')) {
+                if (window.gapi?.client) {
+                    // GAPI already loaded, just init if needed
+                    if (!window.gapi.client.drive) {
+                        window.gapi.load('client', initGapiClient);
+                    } else {
+                        setIsInitialized(true);
+                    }
+                }
+                return;
+            }
+
             const script = document.createElement('script');
             script.src = 'https://apis.google.com/js/api.js';
             script.onload = () => {
-                window.gapi.load('client', async () => {
-                    try {
-                        await window.gapi.client.init({
-                            apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-                            discoveryDocs: DISCOVERY_DOCS,
-                        });
-                        setIsInitialized(true);
-                    } catch (err) {
-                        console.error("GAPI Init Error", err);
-                        setError("Failed to initialize Google API");
-                    }
-                });
+                window.gapi.load('client', initGapiClient);
             };
             document.body.appendChild(script);
         };
 
         const loadGis = () => {
+            if (document.querySelector('script[src="https://accounts.google.com/gsi/client"]')) {
+                return;
+            }
             const script = document.createElement('script');
             script.src = 'https://accounts.google.com/gsi/client';
             document.body.appendChild(script);
         };
 
-        if (!window.gapi) loadGapi();
-        else setIsInitialized(true);
-
-        if (!window.google) loadGis();
+        loadGapi();
+        loadGis();
     }, []);
 
     const login = useCallback(() => {
@@ -76,12 +123,15 @@ export function useGoogleDrive() {
         setError(null);
         try {
             // Ensure token is set if we have it
-            if (accessToken && window.gapi.client) {
-                // Check if token is already set in gapi, if not set it
-                // Note: gapi.client.getToken() might be null if not set
+            if (accessToken && window.gapi?.client) {
                 if (!window.gapi.client.getToken()) {
                     window.gapi.client.setToken({ access_token: accessToken });
                 }
+            }
+
+            // Check if Drive API is loaded
+            if (!window.gapi?.client?.drive) {
+                throw new Error('Google Drive API not loaded. Please refresh the page.');
             }
 
             const response = await window.gapi.client.drive.files.list({
@@ -90,11 +140,24 @@ export function useGoogleDrive() {
                 pageSize: 50,
                 orderBy: 'folder, name'
             });
+
             setLoading(false);
-            return response.result.files;
+
+            // Safely access files with fallback
+            if (!response?.result) {
+                console.error("Unexpected API response:", response);
+                return [];
+            }
+
+            return response.result.files || [];
         } catch (err) {
-            console.error("Drive List Error", err);
-            setError(err.message || "Failed to fetch files");
+            console.error("Drive List Error Details:", JSON.stringify(err, null, 2));
+            if (err.result) {
+                console.error("Drive List Error Result:", JSON.stringify(err.result, null, 2));
+            }
+
+            const errorMessage = err?.result?.error?.message || err.message || "Failed to fetch files";
+            setError(errorMessage);
             setLoading(false);
             throw err;
         }
